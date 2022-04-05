@@ -1,9 +1,10 @@
 package bioctal_test
 
 import (
-	"bioctal"
 	"fmt"
 	"log"
+
+	"github.com/shogo82148/go-bioctal"
 )
 
 func ExampleEncode() {
