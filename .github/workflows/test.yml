@@ -1,0 +1,43 @@
+name: test
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+        go:
+          - "1.18"
+          - "1.17"
+
+    steps:
+      - name: Set up Go ${{ matrix.go }}
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ matrix.go }}
+      - uses: actions/checkout@v3
+
+      - name: Test
+        run: go test -v -coverprofile=coverage.txt .
+
+      - name: Send coverage to coveralls.io
+        uses: shogo82148/actions-goveralls@v1
+        with:
+          path-to-profile: coverage.txt
+          parallel: true
+          flag-name: ${{ matrix.os }}-Go-${{ matrix.go }}
+
+  finish:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: finish
+        uses: shogo82148/actions-goveralls@v1
+        with:
+          parallel-finished: true
