@@ -27,7 +27,7 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.go }}
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Test
         run: go test -v -coverprofile=coverage.txt .
