@@ -8,7 +8,26 @@ import (
 )
 
 // from https://www.rfc-editor.org/rfc/rfc9226.html#bioctal_seq_octaves
-const biocttable = "01234567cjzwfsbv"
+const (
+	biocttable   = "01234567cjzwfsbv"
+	reverseTable = "" +
+		"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
+		"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
+		"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
+		"\x00\x01\x02\x03\x04\x05\x06\x07\xff\xff\xff\xff\xff\xff\xff\xff" +
+		"\xff\xff\x0e\x08\xff\xff\x0c\xff\xff\xff\x09\xff\xff\xff\xff\xff" +
+		"\xff\xff\xff\x0d\xff\xff\x0f\x0b\xff\xff\x0a\xff\xff\xff\xff\xff" +
+		"\xff\xff\x0e\x08\xff\xff\x0c\xff\xff\xff\x09\xff\xff\xff\xff\xff" +
+		"\xff\xff\xff\x0d\xff\xff\x0f\x0b\xff\xff\x0a\xff\xff\xff\xff\xff" +
+		"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
+		"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
+		"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
+		"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
+		"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
+		"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
+		"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
+		"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff"
+)
 
 // EncodedLen returns the length of an encoding of n source bytes.
 // Specifically, it returns n * 2.
@@ -54,12 +73,12 @@ func DecodedLen(x int) int { return x / 2 }
 func Decode(dst, src []byte) (int, error) {
 	i, j := 0, 1
 	for ; j < len(src); j += 2 {
-		a, ok := fromBioctalChar(src[j-1])
-		if !ok {
+		a := reverseTable[src[j-1]]
+		b := reverseTable[src[j]]
+		if a > 0x0f {
 			return i, InvalidByteError(src[j-1])
 		}
-		b, ok := fromBioctalChar(src[j])
-		if !ok {
+		if b > 0x0f {
 			return i, InvalidByteError(src[j])
 		}
 		dst[i] = (a << 4) | b
@@ -68,38 +87,12 @@ func Decode(dst, src []byte) (int, error) {
 	if len(src)%2 == 1 {
 		// Check for invalid char before reporting bad length,
 		// since the invalid char (if present) is an earlier problem.
-		if _, ok := fromBioctalChar(src[j-1]); !ok {
+		if reverseTable[src[j-1]] > 0x0f {
 			return i, InvalidByteError(src[j-1])
 		}
 		return i, ErrLength
 	}
 	return i, nil
-}
-
-func fromBioctalChar(c byte) (byte, bool) {
-	// from https://www.rfc-editor.org/rfc/rfc9226.html#bioctal_seq_octaves
-	switch c {
-	case '0', '1', '2', '3', '4', '5', '6', '7':
-		return c - '0', true
-	case 'c', 'C':
-		return 8, true
-	case 'j', 'J':
-		return 9, true
-	case 'z', 'Z':
-		return 10, true
-	case 'w', 'W':
-		return 11, true
-	case 'f', 'F':
-		return 12, true
-	case 's', 'S':
-		return 13, true
-	case 'b', 'B':
-		return 14, true
-	case 'v', 'V':
-		return 15, true
-	}
-
-	return 0, false
 }
 
 // EncodeToString returns the bioctal encoding of src.
@@ -174,7 +167,7 @@ func (d *decoder) Read(p []byte) (n int, err error) {
 		numRead, d.err = d.r.Read(d.arr[numCopy:])
 		d.in = d.arr[:numCopy+numRead]
 		if d.err == io.EOF && len(d.in)%2 != 0 {
-			if _, ok := fromBioctalChar(d.in[len(d.in)-1]); !ok {
+			if reverseTable[d.in[len(d.in)-1]] > 0x0f {
 				d.err = InvalidByteError(d.in[len(d.in)-1])
 			} else {
 				d.err = io.ErrUnexpectedEOF
