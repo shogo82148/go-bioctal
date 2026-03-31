@@ -24,6 +24,7 @@ var encDecTests = []encDecTest{
 
 func TestEncode(t *testing.T) {
 	for i, test := range encDecTests {
+		// test Encode
 		dst := make([]byte, EncodedLen(len(test.dec)))
 		n := Encode(dst, test.dec)
 		if n != len(dst) {
@@ -31,6 +32,13 @@ func TestEncode(t *testing.T) {
 		}
 		if string(dst) != test.enc {
 			t.Errorf("#%d: got: %#v want: %#v", i, dst, test.enc)
+		}
+
+		// test AppendEncode
+		dst = []byte("lead")
+		dst = AppendEncode(dst, test.dec)
+		if string(dst) != "lead"+test.enc {
+			t.Errorf("#%d: got: %#v want: %#v", i, dst, "lead"+test.enc)
 		}
 	}
 }
@@ -40,12 +48,22 @@ func TestDecode(t *testing.T) {
 	// Encode always uses lowercase.
 	decTests := append(encDecTests, encDecTest{"VCVJVZVWVFVSVBVV", []byte{0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff}})
 	for i, test := range decTests {
+		// test Decode
 		dst := make([]byte, DecodedLen(len(test.enc)))
 		n, err := Decode(dst, []byte(test.enc))
 		if err != nil {
 			t.Errorf("#%d: bad return value: got:%d want:%d", i, n, len(dst))
 		} else if !bytes.Equal(dst, test.dec) {
 			t.Errorf("#%d: got: %#v want: %#v", i, dst, test.dec)
+		}
+
+		// test AppendDecode
+		dst = []byte("lead")
+		dst, err = AppendDecode(dst, []byte(test.enc))
+		if err != nil {
+			t.Errorf("#%d: AppendDecode error: %v", i, err)
+		} else if string(dst) != "lead"+string(test.dec) {
+			t.Errorf("#%d: got: %#v want: %#v", i, dst, "lead"+string(test.dec))
 		}
 	}
 }
