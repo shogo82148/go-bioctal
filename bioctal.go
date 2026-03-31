@@ -71,15 +71,15 @@ func DecodedLen(x int) int { return x / 2 }
 // If the input is malformed, Decode returns the number
 // of bytes decoded before the error.
 func Decode(dst, src []byte) (int, error) {
-	i, j := 0, 1
-	for ; j < len(src); j += 2 {
-		a := reverseTable[src[j-1]]
-		b := reverseTable[src[j]]
+	i, j := 0, 0
+	for ; j < len(src)-1; j += 2 {
+		a := reverseTable[src[j]]
+		b := reverseTable[src[j+1]]
 		if a > 0x0f {
-			return i, InvalidByteError(src[j-1])
+			return i, InvalidByteError(src[j])
 		}
 		if b > 0x0f {
-			return i, InvalidByteError(src[j])
+			return i, InvalidByteError(src[j+1])
 		}
 		dst[i] = (a << 4) | b
 		i++
@@ -87,8 +87,8 @@ func Decode(dst, src []byte) (int, error) {
 	if len(src)%2 == 1 {
 		// Check for invalid char before reporting bad length,
 		// since the invalid char (if present) is an earlier problem.
-		if reverseTable[src[j-1]] > 0x0f {
-			return i, InvalidByteError(src[j-1])
+		if reverseTable[src[j]] > 0x0f {
+			return i, InvalidByteError(src[j])
 		}
 		return i, ErrLength
 	}
