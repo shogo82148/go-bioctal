@@ -152,10 +152,7 @@ func NewEncoder(w io.Writer) io.Writer {
 
 func (e *encoder) Write(p []byte) (n int, err error) {
 	for len(p) > 0 && e.err == nil {
-		chunkSize := bufferSize / 2
-		if len(p) < chunkSize {
-			chunkSize = len(p)
-		}
+		chunkSize := min(len(p), bufferSize/2)
 
 		var written int
 		encoded := Encode(e.out[:], p[:chunkSize])
